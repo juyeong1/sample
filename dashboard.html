@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>데이터 요약 대시보드</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--text:#1d2330;--sub:#667085;--line:#e4e7ec;--a:#2f6fed;--b:#e8833a;--bad:#d64545}
+  @media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b202b;--text:#e8ebf2;--sub:#98a2b3;--line:#2a3140;--a:#6b9bff;--b:#f0a064;--bad:#ef7070}}
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px 16px;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--sub);margin:0 0 20px}
+  h2{font-size:16px;margin:28px 0 10px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .kpi .name{color:var(--sub);font-size:13px}
+  .kpi .val{font-size:28px;font-weight:700;margin:2px 0}
+  .kpi .meta{color:var(--sub);font-size:12px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  .card h3{font-size:14px;margin:0 0 10px}
+  .row{display:grid;grid-template-columns:78px 1fr 50px;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+  .bar{height:14px;background:var(--line);border-radius:7px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:7px}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--sub);font-weight:600}
+  ul{margin:0;padding-left:18px}
+  li{margin:4px 0}
+  .note{color:var(--sub);font-size:12px;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>데이터 요약 대시보드</h1>
+  <p class="sub">Downloads/data 엑셀 4개 요약 · 사과 2개, 웨이퍼 2개</p>
+
+  <div class="kpis">
+    <div class="card kpi"><div class="name">apple_A07 불량률</div><div class="val">21.7%</div><div class="meta">130 / 600 · 2026-10-07</div></div>
+    <div class="card kpi"><div class="name">apple_A25 불량률</div><div class="val">22.0%</div><div class="meta">132 / 600 · 2026-10-25</div></div>
+    <div class="card kpi"><div class="name">wafer W07 불량률</div><div class="val">9.6%</div><div class="meta">59 / 616 die</div></div>
+    <div class="card kpi"><div class="name">wafer W21 불량률</div><div class="val">13.8%</div><div class="meta">85 / 616 die</div></div>
+  </div>
+
+  <h2>구역별 불량률</h2>
+  <div class="grid2" id="zones"></div>
+
+  <h2>불량 유형별 건수</h2>
+  <div class="grid2" id="types"></div>
+
+  <h2>사과 품종별 불량률</h2>
+  <div class="card">
+    <table>
+      <tr><th>품종</th><th>A07 불량률</th><th>A25 불량률</th></tr>
+      <tr><td>홍옥</td><td>27.1%</td><td>27.3%</td></tr>
+      <tr><td>감홍</td><td>22.6%</td><td>20.5%</td></tr>
+      <tr><td>부사</td><td>18.1%</td><td>19.6%</td></tr>
+    </table>
+  </div>
+
+  <h2>핵심 포인트</h2>
+  <div class="card">
+    <ul>
+      <li>사과: 가장자리 불량률이 안쪽·중간의 약 2.5~3배(A07 39.1%, A25 38.0%). 홍옥의 불량률이 가장 높음.</li>
+      <li>wafer W21: 불량 85건 중 68건(80%)이 edge. leakage 33건은 전부 edge.</li>
+      <li>wafer W07: crack이 불량의 42%(25/59)이며 center·mid에서만 발생. center 12.5%는 80개 중 10건이라 표본이 작음.</li>
+      <li>웨이퍼의 bin, fail_type, pass_fail은 1:1 대응이므로 불량 예측 입력에서 제외해야 함.</li>
+    </ul>
+  </div>
+
+  <p class="note">한계: 네 파일 모두 단위와 판정 기준이 파일에 없음. 집계 결과이며 위치가 불량의 원인이라고 단정할 수 없음. 수치는 각 파일에서 직접 계산한 요약 기준.</p>
+</div>
+
+<script>
+const zones=[
+  {title:"사과 A07 (위치)",color:"--a",rows:[["가장자리",39.1],["안쪽",15.0],["중간",13.0]]},
+  {title:"사과 A25 (위치)",color:"--a",rows:[["가장자리",38.0],["안쪽",15.0],["중간",14.8]]},
+  {title:"wafer W07 (zone)",color:"--b",rows:[["center",12.5],["mid",9.9],["edge",8.2]]},
+  {title:"wafer W21 (zone)",color:"--b",rows:[["center",1.3],["mid",5.3],["edge",29.3]]}
+];
+const types=[
+  {title:"사과 A07 (불량사유)",color:"--a",rows:[["무게 미달",63],["당도 미달",36],["멍",23],["벌레 먹음",8]]},
+  {title:"사과 A25 (불량사유)",color:"--a",rows:[["무게 미달",67],["멍",30],["당도 미달",26],["벌레 먹음",9]]},
+  {title:"wafer W07 (fail_type)",color:"--b",rows:[["crack",25],["parametric",9],["vth_shift",7],["leakage",6],["open_short",6],["particle",6]]},
+  {title:"wafer W21 (fail_type)",color:"--b",rows:[["leakage",33],["vth_shift",30],["open_short",9],["parametric",7],["particle",6]]}
+];
+function render(id,list,unit){
+  document.getElementById(id).innerHTML=list.map(c=>{
+    const max=Math.max(...c.rows.map(r=>r[1]));
+    return `<div class="card"><h3>${c.title}</h3>`+c.rows.map(r=>
+      `<div class="row"><span>${r[0]}</span><div class="bar"><i style="width:${r[1]/max*100}%;background:var(${c.color})"></i></div><span class="num">${r[1]}${unit}</span></div>`
+    ).join("")+`</div>`;
+  }).join("");
+}
+render("zones",zones,"%");
+render("types",types,"");
+</script>
+</body>
+</html>
